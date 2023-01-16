@@ -14,18 +14,57 @@ type spaceEntity =
 
 // === ADD YOUR CODE BELOW :D ===
 
+type spaceAnimalReturn = {type: string, location: location};
+
 // === ExpressJS setup + Server setup ===
 const spaceDatabase = [] as spaceEntity[];
 const app = express();
 
+app.use(express.json());
+
 // the POST /entity endpoint adds an entity to your global space database
-app.post("/entity", (req, res) => {
-  // TODO: fill me in
+app.post("/entity", (req, res, next) => {
+  try {
+    if (req.body.entities.length > 0) {
+      req.body.entities.map((entity:spaceEntity) => {
+        spaceDatabase.push(entity);
+      });
+      res.status(200).send("done");
+    } else {
+      res.status(500);
+    }
+  } catch (err:any) {
+    next(err);
+  }  
 });
 
 // /lassoable returns all the space animals a space cowboy can lasso given their name
-app.get("/lassoable", (req, res) => {
-  // TODO: fill me in
+app.get("/lassoable", (req, res, next) => {
+  const cowboy_name = req.query.cowboy_name;
+
+  
+
+  try {
+    const cowboy:any = spaceDatabase.find(entity => 
+      entity.type === "space_cowboy" && entity.metadata.name === cowboy_name);
+  
+    let animals:spaceAnimalReturn[] = [];
+
+    spaceDatabase.forEach(entity => {
+      if (entity.type === "space_animal") {
+        let diffx = entity.location.x - cowboy.location.x;
+        let diffy = entity.location.y - cowboy.location.y;
+        let dist = Math.sqrt(Math.pow(diffx, 2) + Math.pow(diffy, 2));
+        if (dist <= cowboy.metadata.lassoLength) {
+          let newObj:spaceAnimalReturn = { type: entity.metadata.type, location: entity.location};
+          animals.push(newObj);  
+        }
+      }
+    })
+    res.status(200).send({ space_animals: animals});
+  } catch (err:any) {
+    next(err);
+  }
 });
 
 app.listen(8080);
